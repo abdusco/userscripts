@@ -6,8 +6,8 @@
 // @author       https://github.com/abdusco
 // @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nytimes.com
-// @updateURL    https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
-// @downloadURL  https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
+// @updateURL    https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.user.js
+// @downloadURL  https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.user.js
 // @grant        none
 // ==/UserScript==
 
