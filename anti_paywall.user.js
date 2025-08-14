@@ -39,6 +39,7 @@
         },
     };
 
+    let redirecting = false;
     function applyConfig(config) {
         config.removeSelectors?.forEach((sel) => {
             document.querySelectorAll(sel).forEach(($el) => $el.remove());
@@ -48,11 +49,16 @@
         const hasPaywallText = config.paywallText?.some((text) => document.body.innerText.toLowerCase().includes(text.toLowerCase()));
 
         if (hasPaywallElements || hasPaywallText) {
+            if (redirecting) {
+                console.log("Already redirecting to archive, skipping.");
+                return;
+            }
             if (!confirm("Paywall detected. Do you want to redirect to the Internet Archive version?")) {
                 return;
             }
             const pageUrl = encodeURIComponent(window.location.href);
             window.location.href = `https://archive.ph/latest/${pageUrl}`;
+            redirecting = true;
         }
     }
 
