@@ -9,40 +9,64 @@
 // @match        https://www.spiegel.de/*
 // @match        https://www.zeit.de/*
 // @match        https://www.theguardian.com/*
+// @match        https://www.wired.com/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nytimes.com
-// @updateURL    https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.user.js
-// @downloadURL  https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.user.js
+// @updateURL    https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
+// @downloadURL  https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
 // @grant        none
 // ==/UserScript==
 
 (function () {
     "use strict";
 
-    function removeAnnoyances() {
-        for (const selector of ['[name="StickyBottomBanner"]', '[id="sign-in-gate"]', 'gu-island:has([for="choicecard-epic-Contribution-Monthly"])']) {
-            document.querySelectorAll(selector).forEach(($el) => $el.remove());
-        }
-    }
+    const paywalls = {
+        "www.nytimes.com": {
+            paywallSelectors: ['[data-testid="gateway-content"]'],
+        },
+        "www.economist.com": {
+            removeSelectors: ['[name="StickyBottomBanner"]'],
+        },
+        "www.economist.com": {
+            paywallSelectors: ['[data-test-id="regwall"]'],
+        },
+        "www.spiegel.de": {
+            paywallSelectors: ["[data-has-paid-access-hidden]"],
+        },
+        "www.zeit.de": {
+            paywallSelectors: ['[id="paywall"]'],
+        },
+        "www.wired.com": {
+            paywallText: ["read your last free article."],
+        },
+    };
 
-    function redirect() {
-        if (['[data-testid="gateway-content"]', "#regwall-login", '[data-area="paywall"]', "#paywall"].some((sel) => document.querySelector(sel))) {
+    function applyConfig(config) {
+        config.removeSelectors?.forEach((sel) => {
+            document.querySelectorAll(sel).forEach(($el) => $el.remove());
+        });
+
+        const hasPaywallElements = config.paywallSelectors?.some((sel) => document.querySelector(sel));
+        const hasPaywallText = config.paywallText?.some((text) => document.body.innerText.toLowerCase().includes(text.toLowerCase()));
+
+        if (hasPaywallElements || hasPaywallText) {
+            if (!confirm("Paywall detected. Do you want to redirect to the Internet Archive version?")) {
+                return;
+            }
             const pageUrl = encodeURIComponent(window.location.href);
             window.location.href = `https://archive.ph/latest/${pageUrl}`;
-            return true;
         }
-        return false;
     }
-
-    // Try immediately, in case it's already there
-    if (redirect()) return;
 
     // Set up mutation observer to watch for added nodes
     const observer = new MutationObserver((mutations, obs) => {
-        removeAnnoyances();
-        if (redirect()) {
+        const config = paywalls[window.location.hostname];
+        if (!config) {
+            // detach observer if no config found
             obs.disconnect();
+            console.log("No paywall configuration found for this site.");
+            return;
         }
-    });
 
-    observer.observe(document.documentElement, { childList: true, subtree: true });
+        applyConfig(config);
+    }).observe(document.documentElement, { childList: true, subtree: true });
 })();
