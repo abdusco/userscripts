@@ -33,6 +33,10 @@
         "www.wired.com": {
             paywallText: ["read your last free article."],
         },
+        "www.bloomberg.com": {
+            paywallSelectors: ['[id="fortress-container-root"]'],
+            paywallText: ["Subscribe now for uninterrupted access."],
+        },
     };
 
     function applyConfig(config) {
