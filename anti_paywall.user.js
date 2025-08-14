@@ -18,8 +18,8 @@
         "www.nytimes.com": {
             paywallSelectors: ['[data-testid="gateway-content"]'],
         },
-        "www.economist.com": {
-            removeSelectors: ['[name="StickyBottomBanner"]'],
+        "www.theguardian.com": {
+            removeSelectors: ['aside:has([name="StickyBottomBanner"])'],
         },
         "www.economist.com": {
             paywallSelectors: ['[data-test-id="regwall"]'],
