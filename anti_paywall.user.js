@@ -4,12 +4,7 @@
 // @version      0.1
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
-// @match        https://www.nytimes.com/*
-// @match        https://www.economist.com/*
-// @match        https://www.spiegel.de/*
-// @match        https://www.zeit.de/*
-// @match        https://www.theguardian.com/*
-// @match        https://www.wired.com/*
+// @match        *://*/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=nytimes.com
 // @updateURL    https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
 // @downloadURL  https://raw.githubusercontent.com/abdusco/userscripts/master/anti_paywall.js
