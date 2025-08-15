@@ -11,7 +11,7 @@
 // @grant        none
 // ==/UserScript==
 
-(function () {
+(async function () {
     "use strict";
 
     const paywalls = {
@@ -62,16 +62,43 @@
         }
     }
 
-    // Set up mutation observer to watch for added nodes
-    const observer = new MutationObserver((mutations, obs) => {
-        const config = paywalls[window.location.hostname];
-        if (!config) {
-            // detach observer if no config found
-            obs.disconnect();
-            console.log("No paywall configuration found for this site.");
-            return;
-        }
+    const config = paywalls[window.location.hostname];
+    if (!config) {
+        console.log("No paywall configuration found for this site.");
+        return;
+    }
 
+    // Apply immediately on page load
+    applyConfig(config);
+
+    // Promise-based interval function
+    const runInterval = async () => {
+        return new Promise((resolve) => {
+            let intervalCount = 0;
+            const maxIntervalChecks = 4; // 4 checks at 0.5s = 2s total
+
+            const intervalId = setInterval(() => {
+                intervalCount++;
+                console.log(`Interval check ${intervalCount}/${maxIntervalChecks}`);
+
+                applyConfig(config);
+
+                // After 2s (4 checks), clear interval and resolve the promise
+                if (intervalCount >= maxIntervalChecks) {
+                    clearInterval(intervalId);
+                    resolve();
+                }
+            }, 500);
+        });
+    };
+
+    await runInterval();
+    console.log("Switching to mutation observer mode");
+
+    // Set up mutation observer for continued monitoring
+    const observer = new MutationObserver(() => {
         applyConfig(config);
-    }).observe(document.documentElement, { childList: true, subtree: true });
+    });
+
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 })();
