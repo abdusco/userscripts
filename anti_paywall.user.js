@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -42,7 +42,13 @@
     };
 
     let redirecting = false;
+    let cancelled = false;
     function applyConfig(config) {
+        if (cancelled) {
+            console.log("Operation cancelled by user.");
+            return;
+        }
+
         config.removeSelectors?.forEach((sel) => {
             document.querySelectorAll(sel).forEach(($el) => $el.remove());
         });
@@ -57,6 +63,7 @@
                 return;
             }
             if (!confirm("Paywall detected. Do you want to redirect to the Internet Archive version?")) {
+                cancelled = true;
                 return;
             }
             const pageUrl = encodeURIComponent(window.location.href);
