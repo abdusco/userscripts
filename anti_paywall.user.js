@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.1
+// @version      0.2
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -14,6 +14,7 @@
 (async function () {
     "use strict";
 
+    /** @type {Record<string, { paywallSelectors?: string[], removeSelectors?: string[], paywallText?: string[] }>} */
     const paywalls = {
         "www.nytimes.com": {
             paywallSelectors: ['[data-testid="gateway-content"]'],
@@ -23,6 +24,7 @@
         },
         "www.economist.com": {
             paywallSelectors: ['[data-test-id="regwall"]'],
+            paywallText: ["Continue with a free trial"],
         },
         "www.spiegel.de": {
             paywallSelectors: ["[data-has-paid-access-hidden]"],
@@ -46,7 +48,8 @@
         });
 
         const hasPaywallElements = config.paywallSelectors?.some((sel) => document.querySelector(sel));
-        const hasPaywallText = config.paywallText?.some((text) => document.body.innerText.toLowerCase().includes(text.toLowerCase()));
+        const pageText = document.body.innerText.toLowerCase();
+        const hasPaywallText = config.paywallText?.some((text) => pageText.includes(text.toLowerCase()));
 
         if (hasPaywallElements || hasPaywallText) {
             if (redirecting) {
