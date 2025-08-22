@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.3
+// @version      0.4
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -20,7 +20,11 @@
             paywallSelectors: ['[data-testid="gateway-content"]'],
         },
         "www.theguardian.com": {
-            removeSelectors: ['aside:has([name="StickyBottomBanner"])'],
+            removeSelectors: [
+                'aside:has([name="StickyBottomBanner"])',
+                '#liveblog-body > article:has([data-testid="contributions-liveblog-epic"])',
+                'gu-island:has([for="choicecard-epic-Contribution-Monthly"])',
+            ],
         },
         "www.economist.com": {
             paywallSelectors: ['[data-test-id="regwall"]'],
