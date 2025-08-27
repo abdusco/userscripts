@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.4
+// @version      0.5
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -42,6 +42,10 @@
         "www.bloomberg.com": {
             paywallSelectors: ['[id="fortress-container-root"]'],
             paywallText: ["Subscribe now for uninterrupted access."],
+        },
+        "www.reuters.com": {
+            paywallSelectors: ['[data-testid="paywall"]'],
+            paywallText: ["Subscribe to Reuters to continue reading."],
         },
     };
 
