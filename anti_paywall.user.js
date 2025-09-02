@@ -47,6 +47,9 @@
             paywallSelectors: ['[data-testid="paywall"]'],
             paywallText: ["Subscribe to Reuters to continue reading."],
         },
+        "www.washingtonpost.com": {
+            paywallText: ["Ways to read this article"],
+        },
     };
 
     let redirecting = false;
