@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.7
+// @version      0.8
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -16,6 +16,9 @@
 
     /** @type {Record<string, { paywallSelectors?: string[], removeSelectors?: string[], paywallText?: string[] }>} */
     const paywalls = {
+        "www.haaretz.com": {
+            paywallText: ["Subscribe now"], 
+        },
         "www.nytimes.com": {
             paywallSelectors: ['[data-testid="gateway-content"]'],
         },
