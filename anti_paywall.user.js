@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.6
+// @version      0.7
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -78,7 +78,7 @@
                 return;
             }
             const pageUrl = encodeURIComponent(window.location.href);
-            window.location.href = `https://archive.ph/latest/${pageUrl}`;
+            window.location.href = `https://archive.is/latest/${pageUrl}`;
             redirecting = true;
         }
     }
