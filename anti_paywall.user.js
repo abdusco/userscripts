@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.9
+// @version      0.10
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
