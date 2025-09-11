@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.8
+// @version      0.9
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -51,7 +51,10 @@
             paywallText: ["Subscribe to Reuters to continue reading."],
         },
         "www.washingtonpost.com": {
-            paywallText: ["Ways to read this article"],
+            paywallText: [
+                "Ways to read this article",
+                "Already a subscriber",
+            ],
         },
     };
 
