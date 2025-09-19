@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.10
+// @version      0.11
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -17,7 +17,7 @@
     /** @type {Record<string, { paywallSelectors?: string[], removeSelectors?: string[], paywallText?: string[] }>} */
     const paywalls = {
         "www.haaretz.com": {
-            paywallText: ["Subscribe now"], 
+            paywallText: ["Subscribe now"],
         },
         "www.nytimes.com": {
             paywallSelectors: ['[data-testid="gateway-content"]'],
@@ -32,6 +32,7 @@
         "www.economist.com": {
             paywallSelectors: ['[data-test-id="regwall"]'],
             paywallText: ["Continue with a free trial"],
+            removeSelectors: [".expandable-banner:has([href*=subscribe])"],
         },
         "www.spiegel.de": {
             paywallSelectors: ["[data-has-paid-access-hidden]"],
@@ -51,10 +52,7 @@
             paywallText: ["Subscribe to Reuters to continue reading."],
         },
         "www.washingtonpost.com": {
-            paywallText: [
-                "Ways to read this article",
-                "Already a subscriber",
-            ],
+            paywallText: ["Ways to read this article", "Already a subscriber"],
         },
     };
 
