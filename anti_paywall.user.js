@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.13
+// @version      0.15
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -61,6 +61,70 @@
 
     let redirecting = false;
     let cancelled = false;
+    /** @type {null | (() => void)} */
+    let activationHandler = null;
+
+    function removeActivationHandler() {
+        if (!activationHandler) {
+            return;
+        }
+        document.removeEventListener("visibilitychange", activationHandler);
+        window.removeEventListener("focus", activationHandler);
+        activationHandler = null;
+    }
+
+    function promptRedirect() {
+        if (redirecting || cancelled) {
+            return;
+        }
+
+        if (!confirm("Paywall detected. Do you want to redirect to the Internet Archive version?")) {
+            cancelled = true;
+            return;
+        }
+
+        const pageUrl = encodeURIComponent(window.location.href);
+        window.location.href = `https://archive.is/latest/${pageUrl}`;
+        redirecting = true;
+    }
+
+    function schedulePromptOnActivation() {
+        if (activationHandler) {
+            return;
+        }
+
+        activationHandler = () => {
+            if (document.hidden) {
+                return;
+            }
+            removeActivationHandler();
+            promptRedirect();
+        };
+
+        document.addEventListener("visibilitychange", activationHandler);
+        window.addEventListener("focus", activationHandler);
+    }
+
+    function handlePaywallPrompt() {
+        if (redirecting) {
+            console.log("Already redirecting to archive, skipping.");
+            return;
+        }
+
+        if (cancelled) {
+            return;
+        }
+
+        if (document.hidden) {
+            console.log("Tab hidden; deferring paywall prompt until activation.");
+            schedulePromptOnActivation();
+            return;
+        }
+
+        removeActivationHandler();
+        promptRedirect();
+    }
+
     function applyConfig(config) {
         if (cancelled) {
             console.log("Operation cancelled by user.");
@@ -76,17 +140,7 @@
         const hasPaywallText = config.paywallText?.some((text) => pageText.includes(text.toLowerCase()));
 
         if (hasPaywallElements || hasPaywallText) {
-            if (redirecting) {
-                console.log("Already redirecting to archive, skipping.");
-                return;
-            }
-            if (!confirm("Paywall detected. Do you want to redirect to the Internet Archive version?")) {
-                cancelled = true;
-                return;
-            }
-            const pageUrl = encodeURIComponent(window.location.href);
-            window.location.href = `https://archive.is/latest/${pageUrl}`;
-            redirecting = true;
+            handlePaywallPrompt();
         }
     }
 
