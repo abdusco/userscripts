@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Refined Hacker News - Essential Features
 // @namespace    https://github.com/plibither8/refined-hacker-news
-// @version      1.0.0
+// @version      1.1
 // @description  Essential Hacker News enhancements: reply without leaving page, keyboard navigation, easy favorites, and hover info
 // @author       Mihir Chaturvedi (converted to userscript)
 // @match        https://news.ycombinator.com/*
@@ -98,6 +98,11 @@
         .__rhn__new-comment-indent:hover {
             box-shadow: inset -3px 0 #ff6000;
         }
+
+        /* Collapse root comment link */
+        .__rhn__collapse-root-comment {
+            margin-left: 5px;
+        }
     `);
 
     // ============================================================================
@@ -124,6 +129,18 @@
 
     function getAllComments() {
         return [...document.querySelectorAll("tr.comtr")];
+    }
+
+    function getCommentIndentation(element) {
+        const indentImg = element.querySelector(".ind img");
+        return indentImg ? indentImg.width / 40 : 0;
+    }
+
+    function elementPosition(el) {
+        const bodyRect = document.body.getBoundingClientRect();
+        const rect = el.getBoundingClientRect();
+        const top = rect.top - bodyRect.top;
+        return { x: rect.left, y: top };
     }
 
     function createSiblingLoader(element, customStyle = "") {
@@ -703,7 +720,41 @@
     }
 
     // ============================================================================
-    // FEATURE 5: CLICK COMMENT INDENT TO TOGGLE
+    // FEATURE 5: COLLAPSE ROOT COMMENT
+    // ============================================================================
+
+    function initCollapseRootComment() {
+        const comments = getAllComments();
+        let currentRootComment;
+
+        for (const comment of comments) {
+            const indentLevel = getCommentIndentation(comment);
+
+            if (indentLevel === 0) {
+                currentRootComment = comment;
+                continue;
+            }
+
+            const instCurrentRootComment = currentRootComment;
+            const toggle = document.createElement("a");
+
+            toggle.innerText = "[collapse root]";
+            toggle.href = "javascript:void(0)";
+            toggle.classList.add("__rhn__collapse-root-comment");
+            toggle.addEventListener("click", () => {
+                instCurrentRootComment.querySelector("a.togg").click();
+                const { x, y } = elementPosition(instCurrentRootComment);
+                window.scrollTo(x, y);
+            });
+
+            comment.querySelector("span.comhead").append(toggle);
+        }
+
+        return true;
+    }
+
+    // ============================================================================
+    // FEATURE 6: CLICK COMMENT INDENT TO TOGGLE
     // ============================================================================
 
     function initClickCommentIndentToToggle() {
@@ -724,7 +775,7 @@
     }
 
     // ============================================================================
-    // FEATURE 6: HIGHLIGHT UNREAD COMMENTS
+    // FEATURE 7: HIGHLIGHT UNREAD COMMENTS
     // ============================================================================
 
     function initHighlightUnreadComments() {
@@ -801,7 +852,7 @@
     }
 
     // ============================================================================
-    // FEATURE 7: SHOW USER/ITEM INFO ON HOVER
+    // FEATURE 8: SHOW USER/ITEM INFO ON HOVER
     // ============================================================================
 
     function initShowUserInfoOnHover() {
@@ -972,7 +1023,17 @@
             console.error("Failed to initialize keyboard navigation:", e);
         }
 
-        // Feature 4: Click comment indent to toggle (comment pages)
+        // Feature 4: Collapse root comment (comment pages)
+        if (path === "/item" || path.includes("/item?")) {
+            try {
+                initCollapseRootComment();
+                console.log("✓ Collapse root comment initialized");
+            } catch (e) {
+                console.error("Failed to initialize collapse root comment:", e);
+            }
+        }
+
+        // Feature 5: Click comment indent to toggle (comment pages)
         if (path === "/item" || path.includes("/item?")) {
             try {
                 initClickCommentIndentToToggle();
@@ -982,7 +1043,7 @@
             }
         }
 
-        // Feature 5: Highlight unread comments (comment pages)
+        // Feature 6: Highlight unread comments (comment pages)
         if (path === "/item" || path.includes("/item?")) {
             try {
                 initHighlightUnreadComments();
@@ -992,7 +1053,7 @@
             }
         }
 
-        // Feature 6: Show user info on hover (all pages)
+        // Feature 7: Show user info on hover (all pages)
         try {
             initShowUserInfoOnHover();
             console.log("✓ User info on hover initialized");
@@ -1000,7 +1061,7 @@
             console.error("Failed to initialize user info hover:", e);
         }
 
-        // Feature 7: Show item info on hover (comment pages)
+        // Feature 8: Show item info on hover (comment pages)
         if (path === "/item" || path.includes("/item?")) {
             try {
                 initShowItemInfoOnHover();
