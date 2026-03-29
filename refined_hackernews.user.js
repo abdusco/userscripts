@@ -765,7 +765,8 @@
 
             if (indentCell && toggleBtn) {
                 indentCell.classList.add("__rhn__clickable-indent");
-                indentCell.addEventListener("click", () => {
+                indentCell.addEventListener("pointerup", (event) => {
+                    if (isClickModified(event)) return;
                     toggleBtn.click();
                 });
             }
