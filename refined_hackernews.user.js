@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Refined Hacker News - Essential Features
 // @namespace    https://github.com/plibither8/refined-hacker-news
-// @version      1.1
+// @version      1.2
 // @description  Essential Hacker News enhancements: reply without leaving page, keyboard navigation, easy favorites, and hover info
 // @author       Mihir Chaturvedi (converted to userscript)
 // @match        https://news.ycombinator.com/*
@@ -102,6 +102,105 @@
         /* Collapse root comment link */
         .__rhn__collapse-root-comment {
             margin-left: 5px;
+        }
+
+        /* Date filter */
+        .__rhn__date-filter-panel {
+            margin: 12px 0;
+            border: 1px solid #ff6600;
+            background: #fff;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .__rhn__date-filter-panel > summary {
+            color: #ff6600;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .__rhn__date-filter-content {
+            margin-top: 10px;
+        }
+
+        .__rhn__date-filter-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .__rhn__date-filter-title {
+            color: #ff6600;
+            font-weight: 700;
+        }
+
+        .__rhn__date-filter-reset {
+            background: #ff6600;
+            color: #fff;
+            border: 0;
+            border-radius: 4px;
+            padding: 2px 8px;
+            cursor: pointer;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+
+        .__rhn__date-filter-reset:hover {
+            background: #e65c00;
+        }
+
+        .__rhn__date-filter-slider {
+            width: 100%;
+            margin: 8px 0;
+            cursor: pointer;
+        }
+
+        .__rhn__date-filter-range {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .__rhn__date-filter-absolute {
+            font-weight: 600;
+            color: #333;
+            text-align: center;
+            padding: 4px;
+            background: #f5f5f5;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .__rhn__date-filter-relative {
+            font-size: 11px;
+            color: #ff6600;
+            text-align: center;
+            padding: 2px 4px 4px;
+            background: #f5f5f5;
+            border-radius: 0 0 4px 4px;
+            margin-top: -2px;
+            font-weight: 600;
+        }
+
+        .__rhn__date-filter-stats {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: 8px;
+            min-height: 15px;
+        }
+
+        .__rhn__date-filter-highlight {
+            background-color: #fff3e0 !important;
+            border-left: 3px solid #ff6600 !important;
+        }
+
+        .__rhn__date-filter-highlight td {
+            background-color: #fff3e0 !important;
         }
     `);
 
@@ -504,7 +603,7 @@
 
         function getItemList() {
             const itemList = isCommentList
-                ? [...document.querySelectorAll("tr.comtr:not(.noshow) td.default")]
+                ? [...document.querySelectorAll("tr.comtr:not(.noshow):not(.__rhn__filtered-out) td.default")]
                 : [...document.querySelectorAll("table.itemlist tr.athing:not(.__rhn__no-display)")];
 
             const moreLink = document.querySelector("a.morelink");
@@ -987,6 +1086,204 @@
     }
 
     // ============================================================================
+    // FEATURE 9: DATE FILTER FOR COMMENT THREADS
+    // ============================================================================
+
+    function initDateFilter() {
+        const comments = getAllComments();
+        if (comments.length === 0) return false;
+
+        const treeContainer = document.querySelector(".comment-tree");
+        if (!treeContainer) return false;
+
+        const commentData = comments
+            .map((row) => {
+                const ageEl = row.querySelector(".age");
+                const indEl = row.querySelector("td.ind");
+                if (!ageEl || !indEl) return null;
+
+                const title = ageEl.getAttribute("title") || "";
+                const timestampMatch = title.match(/(\d+)\s*$/);
+                const timestamp = timestampMatch ? parseInt(timestampMatch[1], 10) : null;
+                const indent = parseInt(indEl.getAttribute("indent") || "0", 10);
+
+                return {
+                    element: row,
+                    id: row.id,
+                    timestamp,
+                    indent,
+                    nextElement: row.nextElementSibling,
+                    children: [],
+                    parentId: null,
+                };
+            })
+            .filter(Boolean);
+
+        if (commentData.length === 0) return false;
+
+        for (let i = 0; i < commentData.length; i++) {
+            const comment = commentData[i];
+
+            if (comment.indent > 0) {
+                for (let j = i - 1; j >= 0; j--) {
+                    if (commentData[j].indent < comment.indent) {
+                        comment.parentId = commentData[j].id;
+                        commentData[j].children.push(comment.id);
+                        break;
+                    }
+                }
+            }
+        }
+
+        const byId = new Map(commentData.map((comment) => [comment.id, comment]));
+
+        function getAncestors(commentId, ancestors = new Set()) {
+            const comment = byId.get(commentId);
+            if (comment && comment.parentId) {
+                ancestors.add(comment.parentId);
+                getAncestors(comment.parentId, ancestors);
+            }
+            return ancestors;
+        }
+
+        function formatDate(timestamp) {
+            return new Date(timestamp * 1000).toLocaleString();
+        }
+
+        function formatRelativeDate(timestamp) {
+            const now = Math.floor(Date.now() / 1000);
+            const diff = now - timestamp;
+
+            if (diff < 60) return "just now";
+            if (diff < 3600) {
+                const mins = Math.floor(diff / 60);
+                return `${mins} minute${mins > 1 ? "s" : ""} ago`;
+            }
+            if (diff < 86400) {
+                const hours = Math.floor(diff / 3600);
+                return `${hours} hour${hours > 1 ? "s" : ""} ago`;
+            }
+            if (diff < 604800) {
+                const days = Math.floor(diff / 86400);
+                return `${days} day${days > 1 ? "s" : ""} ago`;
+            }
+            if (diff < 2592000) {
+                const weeks = Math.floor(diff / 604800);
+                return `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+            }
+            if (diff < 31536000) {
+                const months = Math.floor(diff / 2592000);
+                return `${months} month${months > 1 ? "s" : ""} ago`;
+            }
+
+            const years = Math.floor(diff / 31536000);
+            return `${years} year${years > 1 ? "s" : ""} ago`;
+        }
+
+        function applyFilter(minTimestamp) {
+            const visibleIds = new Set();
+            const highlightIds = new Set();
+
+            for (const comment of commentData) {
+                if (comment.timestamp && comment.timestamp >= minTimestamp) {
+                    visibleIds.add(comment.id);
+                    highlightIds.add(comment.id);
+                    getAncestors(comment.id, visibleIds);
+                }
+            }
+
+            for (const comment of commentData) {
+                if (visibleIds.has(comment.id)) {
+                    comment.element.style.display = "";
+                    comment.element.classList.remove("__rhn__filtered-out");
+                    if (comment.nextElement && comment.nextElement.classList.contains("morespace")) {
+                        comment.nextElement.style.display = "";
+                    }
+
+                    if (highlightIds.has(comment.id)) {
+                        comment.element.classList.add("__rhn__date-filter-highlight");
+                    } else {
+                        comment.element.classList.remove("__rhn__date-filter-highlight");
+                    }
+                } else {
+                    comment.element.style.display = "none";
+                    comment.element.classList.add("__rhn__filtered-out");
+                    if (comment.nextElement && comment.nextElement.classList.contains("morespace")) {
+                        comment.nextElement.style.display = "none";
+                    }
+                    comment.element.classList.remove("__rhn__date-filter-highlight");
+                }
+            }
+
+            return { visible: visibleIds.size, highlighted: highlightIds.size };
+        }
+
+        const timestamps = commentData.filter((comment) => comment.timestamp).map((comment) => comment.timestamp);
+        if (timestamps.length === 0) return false;
+
+        const minTimestamp = Math.min(...timestamps);
+        const maxTimestamp = Math.max(...timestamps);
+
+        const panel = document.createElement("details");
+        panel.className = "__rhn__date-filter-panel";
+
+        const summary = document.createElement("summary");
+        summary.textContent = "Date Filter";
+
+        const content = document.createElement("div");
+        content.className = "__rhn__date-filter-content";
+        content.innerHTML = `
+            <div class="__rhn__date-filter-header">
+                <span class="__rhn__date-filter-title">Filter thread by date</span>
+                <button type="button" class="__rhn__date-filter-reset">Reset</button>
+            </div>
+            <input type="range" class="__rhn__date-filter-slider" min="${minTimestamp}" max="${maxTimestamp}" value="${minTimestamp}" step="1">
+            <div class="__rhn__date-filter-range">
+                <span>${formatDate(minTimestamp)}</span>
+                <span>${formatDate(maxTimestamp)}</span>
+            </div>
+            <div class="__rhn__date-filter-absolute">${formatDate(minTimestamp)}</div>
+            <div class="__rhn__date-filter-relative">(${formatRelativeDate(minTimestamp)})</div>
+            <div class="__rhn__date-filter-stats"></div>
+        `;
+
+        panel.append(summary, content);
+        treeContainer.parentElement.insertBefore(panel, treeContainer);
+
+        const slider = content.querySelector(".__rhn__date-filter-slider");
+        const absoluteLabel = content.querySelector(".__rhn__date-filter-absolute");
+        const relativeLabel = content.querySelector(".__rhn__date-filter-relative");
+        const statsLabel = content.querySelector(".__rhn__date-filter-stats");
+        const resetButton = content.querySelector(".__rhn__date-filter-reset");
+
+        slider.addEventListener("input", () => {
+            const value = parseInt(slider.value, 10);
+            absoluteLabel.textContent = formatDate(value);
+            relativeLabel.textContent = `(${formatRelativeDate(value)})`;
+            const result = applyFilter(value);
+            statsLabel.textContent = `${result.visible} visible (${result.highlighted} new)`;
+        });
+
+        resetButton.addEventListener("click", () => {
+            slider.value = String(minTimestamp);
+            absoluteLabel.textContent = formatDate(minTimestamp);
+            relativeLabel.textContent = `(${formatRelativeDate(minTimestamp)})`;
+
+            for (const comment of commentData) {
+                comment.element.style.display = "";
+                comment.element.classList.remove("__rhn__date-filter-highlight", "__rhn__filtered-out");
+                if (comment.nextElement && comment.nextElement.classList.contains("morespace")) {
+                    comment.nextElement.style.display = "";
+                }
+            }
+
+            statsLabel.textContent = "";
+        });
+
+        return true;
+    }
+
+    // ============================================================================
     // MAIN INITIALIZATION
     // ============================================================================
 
@@ -1069,6 +1366,16 @@
                 console.log("✓ Item info on hover initialized");
             } catch (e) {
                 console.error("Failed to initialize item info hover:", e);
+            }
+        }
+
+        // Feature 9: Date filter (comment pages)
+        if (path === "/item" || path.includes("/item?")) {
+            try {
+                initDateFilter();
+                console.log("✓ Date filter initialized");
+            } catch (e) {
+                console.error("Failed to initialize date filter:", e);
             }
         }
     }
