@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         anti paywall
 // @namespace    http://tampermonkey.net/
-// @version      0.15
+// @version      0.16
 // @description  try to take over the world!
 // @author       https://github.com/abdusco
 // @match        *://*/*
@@ -16,6 +16,9 @@
 
     /** @type {Record<string, { paywallSelectors?: string[], removeSelectors?: string[], paywallText?: string[] }>} */
     const paywalls = {
+        "www.theatlantic.com": {
+            paywallText: ["Already a subscriber?"],
+        },
         "www.newyorker.com": {
             paywallText: ["Already a subscriber?"],
         },
