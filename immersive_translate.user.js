@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Immersive Translate (BYOK)
 // @namespace    https://github.com/local/simple-immersive-translate
-// @version      0.1.0
+// @version      0.1.1
 // @description  Paragraph-by-paragraph bilingual page translation using your own OpenAI-compatible API key.
 // @author       you
 // @match        *://*/*
@@ -390,22 +390,35 @@
     function buildFloatBall() {
         ballHost = document.createElement("div");
         ballHost.className = "imt-simple-ui-root";
-        ballHost.style.cssText = "position:fixed; right:16px; z-index:2147483000;";
+        // Sits flush against the right edge, mostly off-screen; only a thin sliver
+        // of the button peeks out until hover/focus/touch pulls it fully into view.
+        ballHost.style.cssText = "position:fixed; right:0; z-index:2147483000;";
         ballHost.style.top = String(GM_getValue(BALL_POS_KEY, Math.round(window.innerHeight * 0.45))) + "px";
         document.documentElement.appendChild(ballHost);
 
         ballShadow = ballHost.attachShadow({ mode: "open" });
         injectSharedStyle(ballShadow);
 
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "transform:translateX(60%); transition:transform 0.18s ease;";
+
+        const style = document.createElement("style");
+        style.textContent = `
+      div:hover, div:focus-within, div:active { transform: translateX(0) !important; }
+    `;
+        ballShadow.appendChild(style);
+
         ballBtn = document.createElement("button");
         ballBtn.textContent = "译";
         ballBtn.title = "Simple Immersive Translate";
         ballBtn.style.cssText = `
-      width:48px; height:48px; border-radius:50%; border:none;
-      background:#2563eb; color:#fff; font-size:16px; font-weight:600;
-      box-shadow:0 2px 8px rgba(0,0,0,0.25); user-select:none; touch-action:none;
+      width:32px; height:32px; border-radius:50%; border:none;
+      background:#64748b; color:#fff; font-size:12px; font-weight:600;
+      box-shadow:0 1px 4px rgba(0,0,0,0.25); user-select:none; touch-action:none;
+      opacity:0.85;
     `;
-        ballShadow.appendChild(ballBtn);
+        wrap.appendChild(ballBtn);
+        ballShadow.appendChild(wrap);
 
         ballBtn.addEventListener("pointerdown", onDragStart);
         ballBtn.addEventListener("click", (e) => {
@@ -425,7 +438,7 @@
         if (!dragState) return;
         const dy = e.clientY - dragState.startY;
         if (Math.abs(dy) > 4) dragState.moved = true;
-        const newTop = Math.min(Math.max(8, dragState.startTop + dy), window.innerHeight - 52);
+        const newTop = Math.min(Math.max(8, dragState.startTop + dy), window.innerHeight - 40);
         ballHost.style.top = newTop + "px";
     }
 
@@ -437,7 +450,7 @@
 
     function updateBallActiveStyle() {
         if (!ballBtn) return;
-        ballBtn.style.background = state.active ? "#16a34a" : "#2563eb";
+        ballBtn.style.background = state.active ? "#0d9488" : "#64748b";
     }
 
     function updatePopupStatus() {
@@ -460,7 +473,7 @@
     function openPopup() {
         popupEl = document.createElement("div");
         popupEl.style.cssText = `
-      position:absolute; right:56px; top:0; width:min(240px, calc(100vw - 88px));
+      position:absolute; right:40px; top:0; width:min(240px, calc(100vw - 72px));
       background:#fff; color:#111; border-radius:10px; padding:12px;
       box-shadow:0 4px 20px rgba(0,0,0,0.2); font-size:13px; line-height:1.4;
     `;
