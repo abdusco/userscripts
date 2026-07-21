@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Immersive Translate (BYOK)
 // @namespace    https://github.com/local/simple-immersive-translate
-// @version      0.1.1
+// @version      0.1.3
 // @description  Paragraph-by-paragraph bilingual page translation using your own OpenAI-compatible API key.
 // @author       you
 // @match        *://*/*
@@ -247,17 +247,25 @@
         }
     }
 
+    const PENDING_CLASS = "imt-simple-pending";
+
     function enqueueBatch(els) {
         if (els.length === 0) return;
+        els.forEach((el) => el.classList.add(PENDING_CLASS));
         queue.push(async () => {
             const texts = els.map((el) => el.textContent.trim());
             try {
                 const translations = await translateBatch(texts);
+                // Clear pending state before cloning for the translation node below —
+                // cloneNode copies classList too, so the clone would inherit the pulse.
+                els.forEach((el) => el.classList.remove(PENDING_CLASS));
                 els.forEach((el, i) => renderTranslation(el, translations[i] ?? ""));
                 state.translated += els.length;
             } catch (err) {
                 console.error("[SimpleImmersiveTranslate] batch failed:", err);
                 state.failed += els.length;
+            } finally {
+                els.forEach((el) => el.classList.remove(PENDING_CLASS));
             }
             updatePopupStatus();
         });
@@ -279,7 +287,7 @@
 
         // Divider + muted text color, same combo the original extension's default
         // "dividingLine" + "grey" themes use to set translations apart from the original.
-        const highlightCss = "border-top:1px dashed #94a3b8; padding-top:0.3em; margin-top:0.3em; color:#2f4f4f;";
+        const highlightCss = "border-top:1px dashed #94a3b8; padding-top:0.3em; margin-top:0.3em; color:#2f4f4f; font-size:0.92em;";
 
         // td can't get a cloned sibling <td> (that would add a spurious table column),
         // so append an inline block inside the cell instead.
@@ -304,8 +312,22 @@
         el.insertAdjacentElement("afterend", clone);
     }
 
+    function injectPendingStyle() {
+        if (document.getElementById("imt-simple-pending-style")) return;
+        const style = document.createElement("style");
+        style.id = "imt-simple-pending-style";
+        // Injected into the page (not shadow DOM) since it targets original
+        // paragraph elements while their translation request is in flight.
+        style.textContent = `
+      @keyframes imtSimplePulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      .${PENDING_CLASS} { animation: imtSimplePulse 1.4s ease-in-out infinite; }
+    `;
+        document.head.appendChild(style);
+    }
+
     function startTranslation() {
         if (state.active) return;
+        injectPendingStyle();
         state.active = true;
         state.total = 0;
         state.translated = 0;
